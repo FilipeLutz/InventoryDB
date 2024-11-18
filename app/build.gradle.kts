@@ -2,7 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    id("kotlin-kapt")
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -55,8 +55,10 @@ dependencies {
     // Room dependencies for database management
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.appcompat)
-    kapt(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
+
+    // KSP
+    ksp(libs.androidx.room.compiler.v250)
 
     // Testing dependencies
     testImplementation(libs.junit)
@@ -68,9 +70,4 @@ dependencies {
     // Debug dependencies for development
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-}
-
-// KAPT configuration
-kapt {
-    correctErrorTypes = true
 }

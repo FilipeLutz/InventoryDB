@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
@@ -25,7 +26,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -44,6 +45,8 @@ import com.stu25956.inventorydb.database.DatabaseProvider
 import com.stu25956.inventorydb.model.Inventory
 import com.stu25956.inventorydb.ui.theme.Green
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -70,14 +73,14 @@ fun InventoryScreen() {
     // Coroutine scope to launch coroutines
     val coroutineScope = rememberCoroutineScope()
 
-    // Observe inventory list as Flow
-    val inventoryList by inventoryDao.getAllInventory().collectAsState(initial = emptyList())
+    // Mutable state variable to store the inventory list
+    var inventoryList by remember { mutableStateOf(listOf<Inventory>()) }
 
-    // Fetch total worth initially
+    // LaunchedEffect to collect the inventory list
     LaunchedEffect(Unit) {
         coroutineScope.launch {
-            withContext(Dispatchers.IO) {
-                totalWorth = inventoryDao.getTotalWorth()
+            inventoryDao.getAllInventory().collectLatest { list ->
+                inventoryList = list
             }
         }
     }
@@ -114,14 +117,20 @@ fun InventoryScreen() {
                     .fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                // Display each item in the inventory list
                 items(inventoryList) { item ->
+                    // Inventory Item Card
                     InventoryItemCard(
                         item = item,
-                        onDeleteClick = {
+                        // Handle delete
+                        onDeleteClick = { /* Handle delete */ },
+                        // Handle update
+                        onUpdateClick = { updatedItem ->
                             coroutineScope.launch {
                                 withContext(Dispatchers.IO) {
-                                    // Delete the item
-                                    inventoryDao.deleteInventory(item)
+                                    inventoryDao.updateInventory(updatedItem)
+                                    inventoryList = inventoryDao.getAllInventory().first()
+                                    totalWorth = inventoryDao.getTotalWorth()
                                 }
                             }
                         }
@@ -131,7 +140,7 @@ fun InventoryScreen() {
                 // Button to add new item
                 item {
                     Spacer(modifier = Modifier.height(8.dp))
-
+                    // Add Item Button
                     Button(
                         modifier = Modifier
                             .padding(start = 16.dp),
@@ -184,7 +193,7 @@ fun InventoryScreen() {
         AlertDialog(
             onDismissRequest = { showDialog = false },
             title = {
-                Text(text = "Total Worth", style = MaterialTheme.typography.displaySmall)
+                Text(text = "Inventory Worth", style = MaterialTheme.typography.displaySmall)
             },
             text = {
                 Column {
@@ -192,7 +201,7 @@ fun InventoryScreen() {
                         text = "The total worth of the inventory is:",
                         style = MaterialTheme.typography.titleLarge,
                     )
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(25.dp))
                     Text(
                         text = "€${"%.2f".format(totalWorth)}",
                         style = MaterialTheme.typography.headlineLarge,
@@ -203,7 +212,7 @@ fun InventoryScreen() {
             confirmButton = {
                 TextButton(onClick = { showDialog = false }) {
                     Text("OK",
-                        fontSize = 22.sp)
+                        fontSize = 25.sp)
                 }
             }
         )
@@ -213,36 +222,50 @@ fun InventoryScreen() {
     if (showAddItemDialog) {
         AlertDialog(
             onDismissRequest = { showAddItemDialog = false },
-            title = { Text("Add New Item", style = MaterialTheme.typography.displaySmall) },
+            title = {
+                Text("Add New Item",
+                    style = MaterialTheme.typography.displaySmall) },
             text = {
                 Column {
                     TextField(
                         value = itemName,
                         onValueChange = { itemName = it },
-                        label = { Text("Item Name") },
+                        label = {
+                            Text("Item Name",
+                                fontSize = 18.sp) },
+                        textStyle = TextStyle(fontSize = 22.sp),
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     TextField(
                         value = itemQuantity,
                         onValueChange = { itemQuantity = it },
-                        label = { Text("Quantity") },
+                        label = {
+                            Text("Quantity",
+                                fontSize = 18.sp) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        textStyle = TextStyle(fontSize = 22.sp),
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     TextField(
                         value = itemSupplier,
                         onValueChange = { itemSupplier = it },
-                        label = { Text("Supplier") },
+                        label = {
+                            Text("Supplier",
+                                fontSize = 18.sp) },
+                        textStyle = TextStyle(fontSize = 22.sp),
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     TextField(
                         value = itemCost,
                         onValueChange = { itemCost = it },
-                        label = { Text("Cost per Unit") },
+                        label = {
+                            Text("Cost per Unit",
+                                fontSize = 18.sp) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        textStyle = TextStyle(fontSize = 22.sp),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
